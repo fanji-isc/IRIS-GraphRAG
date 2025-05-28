@@ -10,3 +10,5 @@ __pycache__/
 .env
 .env
 .env
+.ipynb_checkpoints/
+workspace/flask/llm_cache/

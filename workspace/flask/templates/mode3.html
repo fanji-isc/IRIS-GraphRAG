@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Query Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --navy: #2b368e;
+      --teal: #00b6c1;
+      --bg-light: #f5f7fb;
+      --white: #ffffff;
+      --text-dark: #2d2d2d;
+      --border-light: #dce1ef;
+    }
+
+    #loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+    font-size: 1.2rem;
+    color: white;
+  }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top: 5px solid white;
+    border-radius: 50%;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 16px;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .header {
+        position: relative;
+
+        background: linear-gradient(to right, #2b368e, #4353b3);
+        color: white;
+        padding: 26px 32px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        text-align: left;
+        margin-bottom: 30px;
+    }
+
+    .header h1 {
+        font-size: 24px;
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+     }
+
+    .header p {
+        margin-top: 4px;
+        font-size: 14px;
+        color: #e0e4f8;
+        opacity: 0.95;
+        }
+
+
+
+
+
+    .alert {
+      background-color: #fef9e7;
+      border-left: 4px solid #f4c542;
+      padding: 12px 16px;
+      font-size: 14px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+
+    form {
+      background-color: var(--white);
+      border: 1px solid var(--border-light);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background-color: var(--teal);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #0097a3;
+    }
+
+    .btn-secondary {
+      background-color: var(--navy);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #1f286b;
+    }
+
+    .answers-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .answer-box {
+      flex: 1;
+      min-width: 280px;
+      background-color: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .answer-box h3 {
+      font-size: 16px;
+      color: var(--navy);
+      margin-bottom: 10px;
+    }
+
+    .answer-box ul {
+      padding-left: 20px;
+    }
+
+    .answer-box li,
+    .answer-box p {
+      font-size: 14px;
+      color: #444;
+    }
+
+    .search-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search-row input[type="text"] {
+  flex: 1;
+  padding: 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.search-row .btn-primary {
+  padding: 12px 16px;
+  font-size: 15px;
+  background-color: #00b6c1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.search-row .btn-primary:hover {
+  background-color: #009aa5;
+}
+
+
+
+    @media (max-width: 700px) {
+      .answers-container {
+        flex-direction: column;
+      }
+    }
+
+
+    .sample-question {
+        cursor: pointer;
+        font-size: 15px;
+        color: #2b368e; /* Navy blue text */
+     }
+
+    .sample-question:hover {
+    text-decoration: underline;
+    }
+
+    .header a h1 {
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+        }
+
+.header a h1:hover {
+    opacity: 0.85;
+    }
+
+
+
+
+    .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: #000; /* ✅ full black background */
+    }
+
+
+    .modal-content {
+        position: relative;
+        margin: 2vh auto;
+        padding: 0;
+        background-color: transparent;
+        width: 95%;
+        height: 90vh;
+        max-width: 1600px;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        }
+
+        .close-btn {
+            position: absolute;
+            z-index: 10;       /* ✅ Add this */
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            }
+
+#modal-graph {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+}
+
+
+
+.settings-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+#settings-icon {
+  cursor: pointer;
+  font-size: 22px;
+  color: white; /* optional: match header color */
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+
+/* #settings-icon:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+} */
+
+.settings-dropdown {
+  color: black;
+  display: none;
+  position: absolute;
+  top: 45px;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  width: 240px;
+
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+.settings-dropdown label {
+  display: inline-block;
+  white-space: nowrap;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.settings-dropdown input[type="radio"] {
+  margin-right: 6px;
+}
+
+
+
+  </style>
+</head>
+
+  
+  
+<body>
+  <div class="container">
+    <div class="header">
+        <a href="/" style="text-decoration: none; color: inherit;">
+            <h1>GraphRAG</h1>
+          </a>
+          
+      <p>Explore how different retrieval methods answer your question</p>
+
+      <div class="settings-wrapper">
+        <div id="settings-icon" class="settings-icon" title="Settings">⚙️</div>
+        <div id="settings-dropdown" class="settings-dropdown">
+          <form id="settings-form">
+       
+            <label><input type="radio" name="mode" value="/mode1" {% if current_mode == "mode1" %}checked{% endif %}> No RAG</label><br>
+            <label><input type="radio" name="mode" value="/mode2" {% if current_mode == "mode2" %}checked{% endif %}> BaseRAG</label><br>
+            <label><input type="radio" name="mode" value="/mode3" {% if current_mode == "mode3" %}checked{% endif %}> GraphRAG</label><br>
+            <label><input type="radio" name="mode" value="/mode4" {% if current_mode == "mode4" %}checked{% endif %}> No RAG vs BaseRAG</label><br>
+            <label><input type="radio" name="mode" value="/mode5" {% if current_mode == "mode5" %}checked{% endif %}> BaseRAG vs GraphRAG</label><br>
+            <button type="submit" class="btn-primary" style="margin-top: 10px; width: 100%;">Go</button>
+  
+          
+        </form>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="alert">
+      ⚠️ Experimental prototype — some queries may take up to a minute to process.
+    </div>
+
+    <form method="POST">
+        <div class="search-row">
+          <input type="text" name="question" placeholder="Ask something..." value="{{ question }}" autocomplete="off">
+          <button type="submit" class="btn-primary">Submit</button>
+        </div>
+      
+      
+      </form>
+      
+           
+      <button id="open-graph" class="btn-secondary">Show Knowledge Graph</button>
+      <button id="visualize-query" class="btn-secondary" style="margin-top: 10px;">
+        Visualize Relevant Graph
+      </button>
+
+      {% if answer %}
+      <div class="answers-container">
+        <div class="answer-box">
+          <h3>Answer</h3>
+          {% if answer is iterable and answer is not string %}
+            <ul>
+              {% for item in answer %}
+                <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>{{ answer }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+      
+  </div>
+
+
+
+  <div id="graph-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <div id="modal-graph" style="width: 100%; height: 600px; min-height: 600px;"></div>
+    </div>
+  </div>
+  
+  
+  
+
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    Searching relevant documents...
+  </div>
+  
+  <script>
+    const form = document.querySelector("form");
+    const overlay = document.getElementById("loading-overlay");
+  
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      overlay.style.display = "flex";
+      form.submit();
+    });
+  
+    // 🧼 Hide spinner when page first loads
+    window.addEventListener("load", () => {
+      overlay.style.display = "none";
+    });
+  </script>
+  
+  
+
+  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
+  <!-- <script src="https://unpkg.com/3d-force-graph/dist/3d-force-graph.min.js"></script> -->
+  <script src="https://unpkg.com/3d-force-graph@1.74.0/dist/3d-force-graph.min.js?force=true"></script>
+
+
+  
+  <script>
+
+
+const icon = document.getElementById("settings-icon");
+const dropdown = document.getElementById("settings-dropdown");
+
+icon.addEventListener("click", (e) => {
+e.stopPropagation();
+dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+});
+
+document.addEventListener("click", (e) => {
+if (!dropdown.contains(e.target) && e.target !== icon) {
+    dropdown.style.display = "none";
+}
+});
+
+document.getElementById("settings-form").addEventListener("submit", function (e) {
+e.preventDefault();
+const selected = document.querySelector('input[name="mode"]:checked').value;
+window.location.href = selected;
+});
+
+let Graph3D = null;
+
+
+function destroyGraph() {
+    if (Graph3D && Graph3D._destructor) {
+        Graph3D._destructor();  // clean up WebGL resources
+    }
+    Graph3D = null;
+    }
+document.getElementById("open-graph").addEventListener("click", function () {
+  const modal = document.getElementById("graph-modal");
+  modal.style.display = "block";
+
+  // Delay to ensure modal is visible
+  setTimeout(() => {
+    if (!Graph3D) {
+        const container = document.getElementById("modal-graph");
+
+        Graph3D = ForceGraph3D()(container)
+           
+        .backgroundColor("#000000")
+
+        // .backgroundColor("#000000")
+        .nodeAutoColorBy("type")
+        // .nodeVal(node => {
+        //     if (node.type === "Paper") return 100;
+        //     if (node.type === "Topic") return 50;
+        //     return 20;
+        // })
+        // .nodeThreeObject(node => {
+        //     const geometry = new THREE.SphereGeometry(
+        //         node.type === "Paper" ? 20 :
+        //         node.type === "Topic" ? 12 : 8
+        //     );
+        //     const baseColor =
+        //         node.type === "Paper" ? 0x3a4e7a :   // Soft Midnight Blue
+        //         node.type === "Topic" ? 0x5c7d87 :   // Dusty Sky Teal
+        //         0x8c8fae;                            // Silver Lavender
+
+
+
+        //     const material = new THREE.MeshPhongMaterial({
+        //         color: baseColor,
+        //         emissive: baseColor,
+        //         emissiveIntensity: 0.3,
+        //         shininess: 40,
+        //         transparent: true,
+        //         opacity: 0.9
+        //         });
+
+
+
+        //     return new THREE.Mesh(geometry, material);
+        //     })
+
+        .nodeThreeObject(node => {
+            const geometry = new THREE.SphereGeometry(
+                node.type === "Paper" ? 22 :
+                node.type === "Topic" ? 18 : 12
+            );
+
+            const color =
+                // node.type === "Paper" ? 0x6c75c9 :
+                node.type === "Paper" ? 0x00b2A9 :
+                // node.type === "Topic" ? 0x5c7d87 :
+                node.type === "Topic" ? 0x2F2895 :
+                0xFFA489;
+                // 0x8c8fae;
+
+            const material = new THREE.MeshPhongMaterial({
+                color,
+                emissive: color,
+                emissiveIntensity: 0.3,
+                shininess: 40,
+                transparent: true,
+                opacity: 1
+            });
+
+            return new THREE.Mesh(geometry, material);
+            })
+
+        .nodeLabel(node => `${node.label} (${node.type})`)
+        .linkLabel(link => link.type)
+        .linkColor(() => "#ffffff")
+        .linkOpacity(0.3)
+        .linkWidth(1.5)
+        
+        const controls = Graph3D.controls();
+        controls.minDistance = 100;
+        controls.maxDistance = 10000; 
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
+        controls.enableDamping = true;   // 🧽 smooth effect
+        controls.dampingFactor = 0.05;
+
+        controls.addEventListener('start', () => {
+        controls.autoRotate = false;
+        });
+
+        Graph3D.cameraPosition({ x: 0, y: 0, z: 1000 }, null, 0); // set initial distance
+        const camera = Graph3D.camera();
+        camera.near = 1;
+        camera.far = 20000; // 👈 expand the visible distance
+        camera.updateProjectionMatrix();
+        // ✅ Access the internal THREE scene
+    const scene = Graph3D.scene();
+    scene.fog = new THREE.Fog(0x000000, 3000, 15000);  // 🔧 increase range
+    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+    const pointLight = new THREE.PointLight(0xffffff, 1.5, 5000);
+    pointLight.position.set(400, 400, 400);
+    scene.add(pointLight);
+
+
+        // ✅ Spread nodes apart
+        Graph3D.d3Force("link").distance(200);
+        Graph3D.d3Force("charge").strength(-300);
+
+        // ✅ Load and display your graph
+        fetch("/api/graph")
+        .then(res => res.json())
+        .then(data => {
+            console.log("Graph data loaded:", data);
+            Graph3D.graphData(data);
+
+
+            Graph3D.nodeThreeObjectExtend(true);
+            
+            // 👇 Set up update loop on each frame
+            Graph3D.onRenderFramePost(() => {
+            const cam = Graph3D.camera();
+            Graph3D.graphData().nodes.forEach(node => {
+                const mesh = node.__threeObj;
+                if (!mesh) return;
+
+                const dist = cam.position.distanceTo(mesh.position);
+
+                // Clamp values
+                const minScale = 6;
+                const maxScale = 20;
+                const scale = Math.max(minScale, Math.min(maxScale, 1000 / dist));
+
+                // Apply scale and opacity
+                mesh.scale.set(scale, scale, scale);
+
+                if (mesh.material) {
+                mesh.material.opacity = Math.max(0.3, Math.min(1, 800 / dist));
+                mesh.material.transparent = true;
+                }
+            });
+            });
+        });
+    }
+
+
+
+    }, 200);
+});
+
+// Close modal by button
+document.querySelector(".close-btn").addEventListener("click", function () {
+  document.getElementById("graph-modal").style.display = "none";
+});
+
+// Close modal by clicking outside
+window.addEventListener("click", function (event) {
+  const modal = document.getElementById("graph-modal");
+  if (event.target === modal) {
+    modal.style.display = "none";
+  }
+});
+
+
+
+document.getElementById("visualize-query").addEventListener("click", function () {
+const query = document.querySelector("input[name='question']").value;
+
+console.log("🚀 Sending query to backend:", query);
+
+fetch("/api/store_graph_docs", {
+method: "POST",
+headers: {
+  "Content-Type": "application/json"
+},
+body: JSON.stringify({ query })
+}).then(res => {
+if (res.ok) {
+  // Show the same modal
+  document.getElementById("graph-modal").style.display = "block";
+  destroyGraph(); // ✅ cleanup
+
+  // Remove the existing graph if any
+  const container = document.getElementById("modal-graph");
+  container.innerHTML = "";
+
+  // Draw the filtered graph
+  const Graph3D = ForceGraph3D()(container)
+    .backgroundColor("#000000")
+    .nodeAutoColorBy("type")
+    .nodeLabel(node => `${node.label} (${node.type})`)
+    .linkLabel(link => link.type)
+    .linkColor(() => "#ffffff")
+    .linkOpacity(0.3)
+    .linkWidth(1.5);
+
+  fetch("/api/query-graph")  // <-- NEW filtered endpoint
+    .then(res => res.json())
+    // .then(data => Graph3D.graphData(data));
+    .then(data => {
+      console.log("📦 Fetched graph data:", data); // 👈 this line is the debug print
+      Graph3D.graphData(data);
+    });
+}
+});
+});
+
+</script>
+
+
+    
+</body>
+</html>

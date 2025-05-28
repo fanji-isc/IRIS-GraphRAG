@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+  <Document name="iris-graphrag.ZPM">
+    <Module>
+      <Name>iris-graphrag</Name>
+      <Version>1.0.6</Version>
+      <Description>Basic InterSystems IRIS Development Template</Description>
+      <Packaging>module</Packaging>
+      <SourcesRoot>src</SourcesRoot>
+      <Resource Name="GraphKB.PKG"/>
+    </Module>
+  </Document>
+</Export>
