@@ -246,6 +246,7 @@ def query_graph():
     })
 
 if __name__ == "__main__":
+    #when new data need to be added
     load_graph_data()
 
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -21,9 +21,9 @@ Open the terminal in this directory and call the command to build and run the tw
 
 
 ```
-$ docker-compose up -d
+$ docker compose up -d
 ```
-The UI should be accessible through [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
+The UI should be accessible through [http://127.0.0.1:5001/](http://127.0.0.1:5001/)
 
 
 The IRIS management portal should be accessible through: [http://localhost:9092/csp/sys/UtilHome.csp](http://localhost:9092/csp/sys/UtilHome.csp)

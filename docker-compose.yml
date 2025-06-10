@@ -32,6 +32,7 @@ services:
       IRISNAMESPACE: "IRISAPP"
       PYTHON_PATH: "/usr/irissys/bin/"
       PATH: "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
+      
   # jupyter:
   #   image: iscetchenko/iris-jupyter:latest
   #   hostname: jupyter
@@ -52,13 +53,18 @@ services:
       container_name: flask-container
       restart: always
       ports:
-        - "5000:5000"
+        - "5001:5000"
       volumes:
         - ./workspace/flask:/app
         - /usr/irissys/lib/python3.10/site-packages:/usr/irissys/lib/python3.10/site-packages
 
       environment:
-        - PYTHONPATH=/usr/irissys/mgr/python  # Corrected path for IRIS Python integration
+        PYTHONPATH: /usr/irissys/mgr/python   # Corrected path for IRIS Python integration
+        OPENBLAS_NUM_THREADS: 1
+        OMP_NUM_THREADS: 1
+        MKL_NUM_THREADS: 1
+        NUMEXPR_NUM_THREADS: 1
+        VECLIB_MAXIMUM_THREADS: 1
 
         # - FLASK_ENV=development
         # - FLASK_APP=app.py
