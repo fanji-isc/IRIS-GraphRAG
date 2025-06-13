@@ -169,6 +169,21 @@ def ask_query_rag(query, graphitems=0,vectoritems=50, method='local'):
     response = llm_answer_rag(docs, query,False)
     return response
 
+
+def ask_query_ragvsgraphrag(query, graphitems=0,vectoritems=50, method='local'):
+
+    user_query_entity = get_embeddings(query)
+    user_query_embeddings = get_embeddings(query)
+    with HiddenPrints():
+    #   docs = [irispy.classMethodValue("GraphKB.Query","Search",user_query_entity,user_query_embeddings,graphitems,vectoritems)]
+        docs = [safe_iris_query("Search", user_query_entity, user_query_embeddings, graphitems, vectoritems)]
+
+    response = llm_answer_ragvsgraghrag(docs, query,False)
+    return response
+
+
+
+
 def send_to_llm(model, messages):
     client = OpenAI()
     
@@ -180,17 +195,6 @@ def send_to_llm(model, messages):
 
 
 cache = diskcache.Cache('./llm_cache')
-
-#no langchain or llamaindex
-
-#to do:
-#seed
-#prompt
-#making up hallucination
-#docker compose instead of docker-compose 
-#port number 5000 to 5001
-#new data , asssigned to Jeff
-#clean codes
 
 
 def llm_answer_graphrag(batch, query, cutoff=True):
@@ -249,8 +253,7 @@ def llm_answer_rag(batch, query, cutoff=True):
     
 
     prompt_text = """You are an assistant for academic paper search.
-    
-    say "I don't know." 
+    Use the following pieces of retrieved context to answer the question.  
     """ + (("Use three sentences maximum and keep the answer concise.") if cutoff else " ") + """
     Question: {question}  
     Graph Context: {context}
@@ -277,108 +280,45 @@ def llm_answer_rag(batch, query, cutoff=True):
 
     return answer_lines
 
-#only if you want to customize the prompt for rag
-# def llm_answer_for_batch_rag(batch, query, cutoff=True):
+
+def llm_answer_ragvsgraghrag(batch, query, cutoff=True):
  
-#     prompt_text = """You are an assistant for question-answering tasks. 
-#     Use the following pieces of retrieved context to answer the question. 
-#     """ + (("Use three sentences maximum and keep the answer concise.") if cutoff else " ") + """
-#     Question: {question}  
-#     Graph Context: {graph_context}
-#     Answer:
-#     """
-     
-#     prompt = prompt_text.format(**{"question": query, "graph_context": batch})
- 
-#     messages = [
-#             {
-#                 "role": "user",
-#                 "content": prompt
-#             }
-#         ]
+    hash_input = f"{query}|{batch}|{cutoff}".encode("utf-8")
+    cache_key = hashlib.sha256(hash_input).hexdigest()
+
+    # Step 3: Return from cache if available
+    if cache_key in cache:
+        return cache[cache_key]
     
-#     completion = send_to_llm(model, messages)
-#     response = completion.choices[0].message.content
+
+    prompt_text = """You are an assistant for academic paper search.
+    Say I don't know if you don't know.  
+    """ + (("Use three sentences maximum and keep the answer concise.") if cutoff else " ") + """
+    Question: {question}  
+    Graph Context: {context}
+    Answer:
+    """
+
+
+    prompt = prompt_text.format(**{"question": query, "context": batch})
  
-#     answer_lines = [line.strip() for line in response.split('\n') if line.strip()]
+    messages = [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    
+    completion = send_to_llm(model, messages)
+    response = completion.choices[0].message.content
  
-#     return answer_lines
-
-#llamaindex version
-
-# def llm_answer_for_batch_graphrag(batch, query, cutoff=True):
-#     llm = OpenAI(model="gpt-4o", temperature=0)
-#     QA_PROMPT_TMPL = """You are an expert assistant for graph-based academic search. 
-#         You are given a graph context of academic papers including authors, abstracts, and related information.
-#         Use the following pieces of retrieved context from a graph database to answer the question. 
-#         {cutoff_instruction}
-#         Question: {query_str}  
-#         Graph Context: {context_str}
-#         Answer:"""
-
-#     # Construct the actual prompt from the template
-#     prompt_text = QA_PROMPT_TMPL.replace(
-#         "{cutoff_instruction}",
-#         "Keep the answer complete and concise with neccessary reference:" if cutoff else ""
-#     )
-
-#     prompt = PromptTemplate(prompt_text)
-
-#     # Wrap input text into Document objects
-#     documents = [Document(text=doc) for doc in batch]
-#     index = VectorStoreIndex.from_documents(documents)
-
-#     # Use custom response synthesizer with your prompt
-#     response_synthesizer = get_response_synthesizer(llm=llm, text_qa_template=prompt)
-
-#     query_engine = index.as_query_engine(response_synthesizer=response_synthesizer)
-#     response = query_engine.query(query)
-
-#     return [line.strip() for line in str(response).split('\n') if line.strip()]
+    answer_lines = [line.strip() for line in response.split('\n') if line.strip()]
 
 
+    cache[cache_key] = answer_lines
 
-# def llm_answer_for_batch_rag(batch, query, cutoff=True):
-   
-#     llm = OpenAI(model="gpt-4o", temperature=0)
-#     QA_PROMPT_TMPL = """You are an assistant for question-answering tasks. 
-#     Use the following pieces of retrieved context to answer the question. 
-#         {cutoff_instruction}
-#         Question: {query_str}  
-#         Graph Context: {context_str}
-#         Answer:"""
+    return answer_lines
 
-#     # Construct the actual prompt from the template
-#     prompt_text = QA_PROMPT_TMPL.replace(
-#         "{cutoff_instruction}",
-#         "Keep three sentences maximum and keep the answer concise. If you don't know, just say I don't know:" if cutoff else ""
-#     )
-
-#     prompt = PromptTemplate(prompt_text)
-
-#     # Wrap input text into Document objects
-#     documents = [Document(text=doc) for doc in batch]
-#     index = VectorStoreIndex.from_documents(documents)
-
-#     # Use custom response synthesizer with your prompt
-#     response_synthesizer = get_response_synthesizer(llm=llm, text_qa_template=prompt)
-
-#     query_engine = index.as_query_engine(response_synthesizer=response_synthesizer)
-#     response = query_engine.query(query)
-
-#     return [line.strip() for line in str(response).split('\n') if line.strip()]
-
-
-
-
-# def ask_query_graphrag_with_docs(query, graphitems=100, vectoritems=0):
-#     user_query_entity = get_embeddings(query)
-#     user_query_embeddings = get_embeddings(query)
-#     with HiddenPrints():
-#         docs = [irispy.classMethodValue("GraphKB.Query","Search",user_query_entity,user_query_embeddings,graphitems,vectoritems)]
-#     logger.info("📄 Retrieved %d document(s)", len(docs))
-
-#     return docs[0].split("\n\r\n")  # ✅ Ensure this returns a list of abstracts
     
 def ask_query_graphrag_with_docs(query, graphitems=100, vectoritems=0):
     user_query_entity = get_embeddings(query)

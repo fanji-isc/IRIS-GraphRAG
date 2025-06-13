@@ -1,6 +1,6 @@
 
 from flask import Flask, render_template, request, jsonify
-from iris_db import  ask_query_rag,ask_query_graphrag,ask_query_graphrag_with_docs,ask_query_no_rag,load_graph_data
+from iris_db import  ask_query_rag,ask_query_graphrag,ask_query_graphrag_with_docs,ask_query_no_rag,ask_query_ragvsgraphrag,load_graph_data
 # from sentence_transformers import SentenceTransformer
 import pandas as pd
 from flask import request, session, jsonify  # make sure you imported these at top
@@ -148,7 +148,7 @@ def mode3():
     answer = None
     if request.method == "POST":
         question = request.form.get("question")
-        answer = ask_query_rag(question, graphitems=50, vectoritems=0)
+        answer = ask_query_graphrag(question, graphitems=50, vectoritems=0)
     return render_template("mode3.html", question=question, answer=answer, current_mode="mode3")
 
 
@@ -180,7 +180,7 @@ def mode5():
         action = request.form.get("action")  # Which button was clicked
 
          
-        answer1 = ask_query_rag(question, graphitems=0, vectoritems=50)
+        answer1 = ask_query_ragvsgraphrag(question, graphitems=0, vectoritems=50)
         answer2 = ask_query_graphrag(question, graphitems=50, vectoritems=0)
    
 

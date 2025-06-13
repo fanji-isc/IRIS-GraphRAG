@@ -15,7 +15,6 @@
     }
 
     #loading-overlay {
-    display: none;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
@@ -183,6 +182,7 @@
   margin-bottom: 14px;
 }
 
+
 .search-row input[type="text"] {
   flex: 1;
   padding: 12px;
@@ -205,6 +205,27 @@
   background-color: #009aa5;
 }
 
+
+/* .suggestions-box {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 1000;
+  max-height: 180px;
+  overflow-y: auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.suggestions-box div {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.suggestions-box div:hover {
+  background-color: #f0f0f0;
+} */
 
 
     @media (max-width: 700px) {
@@ -274,7 +295,19 @@
 }
 
 
+.close-btn {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  cursor: pointer;
+}
 
+.close-btn:hover {
+  color: black;
+}
 .settings-wrapper {
   position: absolute;
   top: 20px;
@@ -327,6 +360,39 @@
   margin-right: 6px;
 }
 
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-input-wrapper input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  padding-right: 40px; 
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-width: 600px; 
+
+}
+
+.clear-button {
+  position: absolute;
+  top: 20px;
+  left: 620px; /* Adjust this based on padding */
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #888;
+  cursor: pointer;
+  display: none;
+  user-select: none;
+  z-index: 2;
+}
+
+.clear-button:hover {
+  color: #000;
+}
+
 
 
   </style>
@@ -366,15 +432,20 @@
       ⚠️ Experimental prototype — some queries may take up to a minute to process.
     </div>
 
+     
     <form method="POST">
-        <div class="search-row">
-          <input type="text" name="question" placeholder="Ask something..." value="{{ question }}" autocomplete="off">
-          <button type="submit" class="btn-primary">Submit</button>
-        </div>
-      
-      
-      </form>
-      
+
+      <div class="search-row">
+       <div class="search-input-wrapper">
+         <input type="text" name="question" id="search-input" placeholder="Ask something..." autocomplete="on">
+         <span id="clear-button" class="clear-button">&times;</span>
+       </div>
+       <button type="submit" class="btn-primary">Submit</button>
+     </div>
+     
+     
+     </form>
+    
            
       <button id="open-graph" class="btn-secondary">Show Knowledge Graph</button>
       <button id="visualize-query" class="btn-secondary" style="margin-top: 10px;">
@@ -463,6 +534,26 @@ e.preventDefault();
 const selected = document.querySelector('input[name="mode"]:checked').value;
 window.location.href = selected;
 });
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("search-input");
+    const clearBtn = document.getElementById("clear-button");
+
+    function toggleClearButton() {
+      clearBtn.style.display = input.value ? "block" : "none";
+    }
+
+    input.addEventListener("input", toggleClearButton);
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      clearBtn.style.display = "none";
+      input.focus();
+    });
+
+    toggleClearButton(); // run once on load
+  });
+
 
 let Graph3D = null;
 
