@@ -23,7 +23,7 @@ cd IRIS-GraphRAG
 
 Create a `.env` file inside the `workspace/flask/` directory with the following contents:
 
-
+# .env file
 OPENAI_API_KEY=your-openai-api-key
 SECRET_KEY=your-secret-key
 
