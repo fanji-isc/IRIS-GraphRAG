@@ -273,7 +273,19 @@
   height: 100%;
 }
 
+.close-btn {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  cursor: pointer;
+}
 
+.close-btn:hover {
+  color: black;
+}
 
 .settings-wrapper {
   position: absolute;
@@ -329,6 +341,42 @@
 
 
 
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-input-wrapper input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  padding-right: 40px; 
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-width: 600px; 
+
+}
+
+.clear-button {
+  position: absolute;
+  top: 20px;
+  left: 620px; /* Adjust this based on padding */
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #888;
+  cursor: pointer;
+  display: none;
+  user-select: none;
+  z-index: 2;
+}
+
+
+.clear-button:hover {
+  color: #000;
+}
+
+
   </style>
 </head>
 
@@ -337,7 +385,7 @@
 <body>
   <div class="container">
     <div class="header">
-        <a href="/" style="text-decoration: none; color: inherit;">
+        <a href="/mode1" style="text-decoration: none; color: inherit;">
             <h1>BaseRAG</h1>
           </a>
           
@@ -367,11 +415,14 @@
     </div>
 
     <form method="POST">
-        <div class="search-row">
-          <input type="text" name="question" placeholder="Ask something..." value="{{ question }}" autocomplete="off">
-          <button type="submit" class="btn-primary">Submit</button>
+
+      <div class="search-row">
+        <div class="search-input-wrapper">
+          <input type="text" name="question" id="search-input" placeholder="Ask something..." autocomplete="on" value="{{ question }}">
+          <span id="clear-button" class="clear-button">&times;</span>
         </div>
-      
+        <button type="submit" class="btn-primary">Submit</button>
+      </div>
       
       </form>
       
@@ -458,7 +509,29 @@
     e.preventDefault();
     const selected = document.querySelector('input[name="mode"]:checked').value;
     window.location.href = selected;
-    });
+  });
+
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("search-input");
+  const clearBtn = document.getElementById("clear-button");
+
+  function toggleClearButton() {
+    clearBtn.style.display = input.value ? "block" : "none";
+  }
+
+  input.addEventListener("input", toggleClearButton);
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    clearBtn.style.display = "none";
+    input.focus();
+  });
+
+  toggleClearButton(); // run once on load
+});
+
 
     let Graph3D = null;
     

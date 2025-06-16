@@ -31,19 +31,7 @@ ClassMethod Search(userQueryEntity As %String, userQueryEmbedding As %String, gr
             while rsetEntity.%Next(){
                 set entityList = $s($d(entityList):entityList,1:"")_$lb(rsetEntity.%Get("entityid"))    
             }
-            #; set myquery = "SELECT TOP ? 'abstract:'||docs.abstract||' authors:'||docs.authors ||' title:'||docs.title as abstract "
-            #; _"FROM GraphKB.Relations rel "
-            #; _"JOIN GraphKB.Documents docs"
-            #; _"ON rel.docid=docs.docid"
-            #; _"WHERE rel.source %INLIST ? OR rel.target %INLIST ?"
-            #; #; _"GROUP BY rel.docid"
-            #; #; _"ORDER by count(rel.docid) DESC"
-            #; _"UNION"
-            #; _"SELECT TOP ? 'abstract:'||docs.abstract||' authors:'||docs.authors ||' title:'||docs.title as abstract "
-            #; _"FROM GraphKB.DocumentsEmbeddings emb"
-            #; _"JOIN GraphKB.Documents docs"
-            #; _"ON emb.ID = docs.ID"
-            #; _"ORDER BY VECTOR_DOT_PRODUCT(emb.Embedding, TO_VECTOR(?)) DESC"
+            
             set myquery = "SELECT TOP ?  docs.docid,'abstract:'||docs.abstract||' authors:'||docs.authors ||' title:'||docs.title ||' published:' ||docs.published as abstract " 
              _ "FROM GraphKB.Relations rel " 
              _ "JOIN GraphKB.Documents docs ON rel.docid = docs.docid " 
@@ -55,6 +43,15 @@ ClassMethod Search(userQueryEntity As %String, userQueryEmbedding As %String, gr
              _ "FROM GraphKB.DocumentsEmbeddings emb " 
              _ "JOIN GraphKB.Documents docs ON emb.ID = docs.ID " 
              _ "ORDER BY VECTOR_DOT_PRODUCT(emb.Embedding, TO_VECTOR(?)) DESC"
+            #; SET myquery = 
+            #; "SELECT TOP ? docs.docid, " _
+            #; "'abstract:' || docs.abstract || ' authors:' || docs.authors || ' title:' || docs.title || ' published:' || docs.published AS abstract " _
+            #; "FROM GraphKB.Relations rel " _
+            #; "JOIN GraphKB.Documents docs ON rel.docid = docs.docid " _
+            #; "WHERE rel.source %INLIST ? OR rel.target %INLIST ? " _
+            #; "GROUP BY docs.docid, docs.abstract, docs.authors, docs.title, docs.published " _
+            #; "ORDER BY COUNT(*) DESC"
+
 
 
         } elseif semanticSearchCount > 0 { // Semantic search 

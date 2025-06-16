@@ -404,7 +404,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <a href="/" style="text-decoration: none; color: inherit;">
+            <a href="/mode1" style="text-decoration: none; color: inherit;">
                 <h1>No RAG</h1>
               </a>
               
@@ -436,7 +436,7 @@
 
        <div class="search-row">
         <div class="search-input-wrapper">
-          <input type="text" name="question" id="search-input" placeholder="Ask something..." autocomplete="on">
+          <input type="text" name="question" id="search-input" placeholder="Ask something..." autocomplete="on" value="{{ question }}">
           <span id="clear-button" class="clear-button">&times;</span>
         </div>
         <button type="submit" class="btn-primary">Submit</button>
@@ -549,6 +549,7 @@
 
     toggleClearButton(); // run once on load
   });
+  
 
     let Graph3D = null;
     

@@ -6,8 +6,10 @@ import pandas as pd
 from flask import request, session, jsonify  # make sure you imported these at top
 import hashlib
 from iris_db import setup_environment
+import difflib
 
-setup_environment()
+load_graph_data()
+
 
 
 graph_cache = {}
@@ -18,8 +20,11 @@ entities_df = pd.read_csv('CSV/entities300.csv')
 relations_df = pd.read_csv('CSV/relations300.csv')
 
 
+
 app = Flask(__name__)
+setup_environment(app)
 # app.secret_key = ""  # Required for session to work
+
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -32,12 +37,12 @@ def home():
         question = request.form.get("question")
         action = request.form.get("action")  # Which button was clicked
 
-        answer1 = ask_query_rag(question, graphitems=0, vectoritems=50)
-        answer2 = ask_query_graphrag(question, graphitems=50, vectoritems=0)
+        answer1 = ask_query_rag(question, graphitems=0, vectoritems=100)
+        answer2 = ask_query_graphrag(question, graphitems=100, vectoritems=0)
      
         
 
-    return render_template("index.html", question=question, answer1=answer1, answer2=answer2)
+    return render_template("mode1.html", question=question, answer1=answer1, answer2=answer2)
 
 
 
@@ -139,7 +144,7 @@ def mode2():
     answer = None
     if request.method == "POST":
         question = request.form.get("question")
-        answer = ask_query_rag(question, graphitems=0, vectoritems=50)
+        answer = ask_query_rag(question, graphitems=0, vectoritems=100)
     return render_template("mode2.html", question=question, answer=answer, current_mode="mode2")
 
 @app.route("/mode3", methods=["GET", "POST"])
@@ -148,7 +153,7 @@ def mode3():
     answer = None
     if request.method == "POST":
         question = request.form.get("question")
-        answer = ask_query_graphrag(question, graphitems=50, vectoritems=0)
+        answer = ask_query_graphrag(question, graphitems=100, vectoritems=0)
     return render_template("mode3.html", question=question, answer=answer, current_mode="mode3")
 
 
@@ -187,13 +192,80 @@ def mode5():
     return render_template("mode5.html", question=question, answer1=answer1, answer2=answer2, current_mode="mode5")
 
 
+# @app.route("/api/query-graph")
+
+# def query_graph():
+#     query_key = session.get("graph_key")
+#     if not query_key or query_key not in graph_cache:
+#         return jsonify({"nodes": [], "links": []})
+
+#     context = graph_cache[query_key]
+#     nodes = {}
+#     links = {}
+
+#     # Step 1: Extract relevant docids from cached context
+#     matching_titles = []
+#     for abstract in context:
+#         title_line = next((line for line in abstract.split("\n") if "TITLE:" in line.upper()), None)
+#         if title_line:
+#             title = title_line.split("TITLE:", 1)[-1].strip()
+#             matching_titles.append(title.lower())
+
+#     # Step 2: Map titles to docids
+#     title_to_docid = {title.lower(): docid for docid, title in zip(papers_df['docid'], papers_df['title'])}
+#     matched_docids = [docid for title, docid in title_to_docid.items() if title in matching_titles]
+
+#     # Step 3: Build graph only for matched docids using entities_df
+#     for _, row in entities_df[entities_df['docid'].isin(matched_docids)].iterrows():
+#         docid = row['docid']
+#         paper_id = f"Paper_{docid}"
+#         node_type = row['type']
+#         entity_id = row['entityid'].strip()
+
+#         # Add paper node (only once)
+#         if paper_id not in nodes:
+#             paper_title = papers_df.loc[papers_df['docid'] == docid, 'title'].values[0]
+#             nodes[paper_id] = {
+#                 "id": paper_id,
+#                 "type": "Paper",
+#                 "label": paper_title
+#             }
+
+#         if node_type != "Paper":
+#             entity_node_id = f"{node_type}_{entity_id.lower().replace(' ', '_')}"
+#             if entity_node_id not in nodes:
+#                 nodes[entity_node_id] = {
+#                     "id": entity_node_id,
+#                     "type": node_type,
+#                     "label": entity_id
+#                 }
+
+#             links[(entity_node_id, paper_id)] = {
+#                 "source": entity_node_id,
+#                 "target": paper_id,
+#                 "type": "AUTHORED" if node_type == "Author" else "COVERS"
+#             }
+
+#     return jsonify({
+#         "nodes": list(nodes.values()),
+#         "links": list(links.values())
+#     })
+
+
 @app.route("/api/query-graph")
 def query_graph():
     query_key = session.get("graph_key")
     if not query_key or query_key not in graph_cache:
+        app.logger.warning("❌ No graph_key in session or not in cache")
         return jsonify({"nodes": [], "links": []})
 
     context = graph_cache[query_key]
+    app.logger.info(f"✅ Found context with {len(context)} docs in graph_cache")
+
+    # Preview sample abstract
+    for abstract in context[:2]:
+        app.logger.info(f"\n📄 Sample doc:\n{abstract[:300]}\n---")
+
     nodes = {}
     links = {}
 
@@ -205,9 +277,20 @@ def query_graph():
             title = title_line.split("TITLE:", 1)[-1].strip()
             matching_titles.append(title.lower())
 
+    app.logger.info(f"🧠 Extracted matching_titles: {matching_titles}")
+
     # Step 2: Map titles to docids
     title_to_docid = {title.lower(): docid for docid, title in zip(papers_df['docid'], papers_df['title'])}
-    matched_docids = [docid for title, docid in title_to_docid.items() if title in matching_titles]
+    # matched_docids = [docid for title, docid in title_to_docid.items() if title in matching_titles]
+
+
+    matched_docids = []
+    for extracted_title in matching_titles:
+        closest = difflib.get_close_matches(extracted_title, title_to_docid.keys(), n=1, cutoff=0.75)
+        if closest:
+            matched_docids.append(title_to_docid[closest[0]])
+
+    app.logger.info(f"🔗 Matched docids: {matched_docids}")
 
     # Step 3: Build graph only for matched docids using entities_df
     for _, row in entities_df[entities_df['docid'].isin(matched_docids)].iterrows():
@@ -240,14 +323,18 @@ def query_graph():
                 "type": "AUTHORED" if node_type == "Author" else "COVERS"
             }
 
+    app.logger.info(f"📦 Final graph → Nodes: {len(nodes)}, Links: {len(links)}")
+
     return jsonify({
         "nodes": list(nodes.values()),
         "links": list(links.values())
     })
 
+
+
+
 if __name__ == "__main__":
     #when new data need to be added
-    load_graph_data()
 
     app.run(host="0.0.0.0", port=5000, debug=True)
 

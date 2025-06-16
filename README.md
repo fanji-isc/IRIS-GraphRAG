@@ -11,9 +11,28 @@ Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installi
 
 ## Installation
 
-Clone/git pull the repo into any local directory
+### 1. Clone the Repository
 
-Replace your OPEN AI Key in iris_db.py
+```bash
+git clone https://github.com/fanji-isc/IRIS-GraphRAG.git
+cd IRIS-GraphRAG
+```
+
+### 2. Set up the Environment
+
+
+Create a `.env` file inside the `workspace/flask/` directory with the following contents:
+
+
+OPENAI_API_KEY=your-openai-api-key
+SECRET_KEY=your-secret-key
+
+
+You can generate a secure SECRET_KEY using:
+
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32)"
+```
 
 Open the terminal in this directory and call the command to build and run the two containes:
 *Note: Users running containers on a Linux CLI, should use "docker compose" instead of "docker-compose"*

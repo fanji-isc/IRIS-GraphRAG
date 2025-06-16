@@ -60,12 +60,29 @@ def safe_iris_query(method, *args):
                 continue
             raise
 
-def setup_environment():
+# def setup_environment():
+#     load_dotenv()
+#     key = os.getenv("OPENAI_API_KEY")
+#     if not key:
+#         raise RuntimeError("❌ OPENAI_API_KEY is missing in your .env file or environment.")
+#     os.environ["OPENAI_API_KEY"] = key
+
+
+def setup_environment(app=None):
     load_dotenv()
+
     key = os.getenv("OPENAI_API_KEY")
     if not key:
         raise RuntimeError("❌ OPENAI_API_KEY is missing in your .env file or environment.")
     os.environ["OPENAI_API_KEY"] = key
+
+    if app:
+        secret = os.getenv("SECRET_KEY")
+        if not secret:
+            raise RuntimeError("❌ SECRET_KEY is missing in your .env file or environment.")
+        app.secret_key = secret
+
+
 
 irispy = iris.createIRIS(conn)
 
@@ -77,21 +94,21 @@ model = gpt4omini
 # relationsfile = '/app/CSV/relations100.csv'
 # entitiesfile = '/app/CSV/entities100.csv'
 
-docsfile = '/home/irisowner/dev/CSV/papers300.csv'
-relationsfile = '/home/irisowner/dev/CSV/relations300.csv'
-entitiesfile = '/home/irisowner/dev/CSV/entities300.csv'
+# docsfile = '/home/irisowner/dev/CSV/papers300.csv'
+# relationsfile = '/home/irisowner/dev/CSV/relations300.csv'
+# entitiesfile = '/home/irisowner/dev/CSV/entities300.csv'
 
-# Load data
-# irispy.classMethodValue("GraphKB.Documents","LoadData",docsfile)
-# irispy.classMethodValue("GraphKB.Entity","LoadData",entitiesfile)
-# irispy.classMethodValue("GraphKB.Relations","LoadData",relationsfile)
+# entitiesembeddingsfile = '/home/irisowner/dev/CSV/entities_embeddings300.csv'
+# papersembeddingsfile = '/home/irisowner/dev/CSV/papers_embeddings300.csv'
 
 
-entitiesembeddingsfile = '/home/irisowner/dev/CSV/entities_embeddings300.csv'
-papersembeddingsfile = '/home/irisowner/dev/CSV/papers_embeddings300.csv'
 
-# irispy.classMethodValue("GraphKB.DocumentsEmbeddings","LoadData",papersembeddingsfile)
-# irispy.classMethodValue("GraphKB.EntityEmbeddings","LoadData",entitiesembeddingsfile)
+docsfile = '/home/irisowner/dev/data/papers300.csv'
+relationsfile = '/home/irisowner/dev/data/relations300.csv'
+entitiesfile = '/home/irisowner/dev/data/entities300.csv'
+
+entitiesembeddingsfile = '/home/irisowner/dev/data/entities_embeddings300.csv'
+papersembeddingsfile = '/home/irisowner/dev/data/papers_embeddings300.csv'
 
 #use only when new data need to be added
 # irispy = iris.createIRIS(conn)
@@ -99,7 +116,12 @@ papersembeddingsfile = '/home/irisowner/dev/CSV/papers_embeddings300.csv'
 def load_graph_data():
     print("🔁 Loading GraphKB data...")
 
-    irispy.classMethodValue("GraphKB.Documents", "LoadData", docsfile)
+    try:
+        result = irispy.classMethodValue("GraphKB.Documents", "LoadData", docsfile)
+        print("✅ Documents loaded:", result)
+    except Exception as e:
+        print("❌ Failed to load Documents:", e)
+
     irispy.classMethodValue("GraphKB.Entity", "LoadData", entitiesfile)
     irispy.classMethodValue("GraphKB.Relations", "LoadData", relationsfile)
     irispy.classMethodValue("GraphKB.DocumentsEmbeddings", "LoadData", papersembeddingsfile)
@@ -147,7 +169,18 @@ def ask_query_no_rag(query, cutoff=True):
     return [line.strip() for line in response.choices[0].message.content.split("\n") if line.strip()]
 
 
-def ask_query_graphrag(query, graphitems=50,vectoritems=0, method='local'):
+def ask_query_graphrag(query, graphitems=100,vectoritems=0, method='local'):
+
+    user_query_entity = get_embeddings(query)
+    user_query_embeddings = get_embeddings(query)
+    with HiddenPrints():
+    #   docs = [irispy.classMethodValue("GraphKB.Query","Search",user_query_entity,user_query_embeddings,graphitems,vectoritems)]
+        docs = [safe_iris_query("Search", user_query_entity, user_query_embeddings, graphitems, vectoritems)]
+
+    response = llm_answer_rag(docs, query,True)
+    return response
+
+def ask_query_rag(query, graphitems=0,vectoritems=100, method='local'):
 
     user_query_entity = get_embeddings(query)
     user_query_embeddings = get_embeddings(query)
@@ -156,17 +189,6 @@ def ask_query_graphrag(query, graphitems=50,vectoritems=0, method='local'):
         docs = [safe_iris_query("Search", user_query_entity, user_query_embeddings, graphitems, vectoritems)]
 
     response = llm_answer_graphrag(docs, query,True)
-    return response
-
-def ask_query_rag(query, graphitems=0,vectoritems=50, method='local'):
-
-    user_query_entity = get_embeddings(query)
-    user_query_embeddings = get_embeddings(query)
-    with HiddenPrints():
-    #   docs = [irispy.classMethodValue("GraphKB.Query","Search",user_query_entity,user_query_embeddings,graphitems,vectoritems)]
-        docs = [safe_iris_query("Search", user_query_entity, user_query_embeddings, graphitems, vectoritems)]
-
-    response = llm_answer_rag(docs, query,False)
     return response
 
 
@@ -189,7 +211,8 @@ def send_to_llm(model, messages):
     
     completion = client.chat.completions.create(
         model=model,
-        messages=messages
+        messages=messages,
+        temperature=0 
     )
     return completion
 
@@ -209,9 +232,9 @@ def llm_answer_graphrag(batch, query, cutoff=True):
     
 
     prompt_text = """You are an expert assistant for graph-based academic search. 
-    You are given a graph context of academic papers including authors, abstracts, and related information.
+    You are given a graph context of academic papers including authors, abstracts, published date.
     Use the following pieces of retrieved context from a graph database to answer the question.
-    """ + (("Use three sentences maximum and keep the answer concise,do not use any numbered list or bullet points.") if cutoff else " ") + """
+    """ + (("Use three sentences maximum and keep the answer concise.") if cutoff else " ") + """
     Question: {question}  
     Graph Context: {graph_context}
     Answer:
