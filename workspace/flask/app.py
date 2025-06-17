@@ -27,25 +27,32 @@ setup_environment(app)
 
 
 
-@app.route("/", methods=["GET", "POST"])
-def home():
-    question = ""  # Default empty question
-    answer1 = None
-    answer2 = None
+# @app.route("/", methods=["GET", "POST"])
+# def home():
+#     question = ""  # Default empty question
+#     answer1 = None
+#     answer2 = None
 
-    if request.method == "POST":
-        question = request.form.get("question")
-        action = request.form.get("action")  # Which button was clicked
+#     if request.method == "POST":
+#         question = request.form.get("question")
+#         action = request.form.get("action")  # Which button was clicked
 
-        answer1 = ask_query_rag(question, graphitems=0, vectoritems=100)
-        answer2 = ask_query_graphrag(question, graphitems=100, vectoritems=0)
+#         answer1 = ask_query_rag(question, graphitems=0, vectoritems=100)
+#         answer2 = ask_query_graphrag(question, graphitems=100, vectoritems=0)
      
         
 
-    return render_template("mode1.html", question=question, answer1=answer1, answer2=answer2)
+#     return render_template("mode1.html", question=question, answer1=answer1, answer2=answer2)
 
 
-
+@app.route("/", methods=["GET", "POST"])
+def home():
+    question = ""
+    answer = None
+    if request.method == "POST":
+        question = request.form.get("question")
+        answer = ask_query_no_rag(question)
+    return render_template("mode1.html", question=question, answer=answer)
 
 @app.route("/api/graph")
 def get_graph():
