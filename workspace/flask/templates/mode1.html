@@ -13,7 +13,6 @@
       --text-dark: #2d2d2d;
       --border-light: #dce1ef;
     }
-
     #loading-overlay {
     position: fixed;
     inset: 0;
@@ -27,6 +26,8 @@
     font-size: 1.2rem;
     color: white;
   }
+
+
 
   .spinner {
     width: 48px;
@@ -405,7 +406,7 @@
     <div class="container">
         <div class="header">
             <a href="/mode1" style="text-decoration: none; color: inherit;">
-                <h1>No RAG</h1>
+                <h1>LLM Alone</h1>
               </a>
               
           <p>Explore how different retrieval methods answer your question</p>
@@ -415,11 +416,11 @@
             <div id="settings-dropdown" class="settings-dropdown">
                 <form id="settings-form">
            
-                    <label><input type="radio" name="mode" value="/mode1" {% if current_mode == "mode1" %}checked{% endif %}> No RAG</label><br>
-                    <label><input type="radio" name="mode" value="/mode2" {% if current_mode == "mode2" %}checked{% endif %}> BaseRAG</label><br>
+                    <label><input type="radio" name="mode" value="/mode1" {% if current_mode == "mode1" %}checked{% endif %}> LLM Alone</label><br>
+                    <label><input type="radio" name="mode" value="/mode2" {% if current_mode == "mode2" %}checked{% endif %}> RAG</label><br>
                     <label><input type="radio" name="mode" value="/mode3" {% if current_mode == "mode3" %}checked{% endif %}> GraphRAG</label><br>
-                    <label><input type="radio" name="mode" value="/mode4" {% if current_mode == "mode4" %}checked{% endif %}> No RAG vs BaseRAG</label><br>
-                    <label><input type="radio" name="mode" value="/mode5" {% if current_mode == "mode5" %}checked{% endif %}> BaseRAG vs GraphRAG</label><br>
+                    <label><input type="radio" name="mode" value="/mode4" {% if current_mode == "mode4" %}checked{% endif %}> LLM Alone vs RAG</label><br>
+                    <label><input type="radio" name="mode" value="/mode5" {% if current_mode == "mode5" %}checked{% endif %}> RAG vs GraphRAG</label><br>
                     <button type="submit" class="btn-primary" style="margin-top: 10px; width: 100%;">Go</button>
           
                   
@@ -428,9 +429,7 @@
           </div>
           
         </div>
-    <div class="alert">
-      ⚠️ Experimental prototype — some queries may take up to a minute to process.
-    </div>
+
 
     <form method="POST">
 

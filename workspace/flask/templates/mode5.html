@@ -418,7 +418,7 @@
   <div class="container">
     <div class="header">
         <a href="/mode1" style="text-decoration: none; color: inherit;">
-            <h1>BaseRAG vs GraphRAG</h1>
+            <h1>RAG vs GraphRAG</h1>
           </a>
           
       <p>Explore how different retrieval methods answer your question</p>
@@ -428,13 +428,12 @@
         <div id="settings-dropdown" class="settings-dropdown">
           <form id="settings-form">
        
-              <label><input type="radio" name="mode" value="/mode1" {% if current_mode == "mode1" %}checked{% endif %}> No RAG</label><br>
-              <label><input type="radio" name="mode" value="/mode2" {% if current_mode == "mode2" %}checked{% endif %}> BaseRAG</label><br>
-              <label><input type="radio" name="mode" value="/mode3" {% if current_mode == "mode3" %}checked{% endif %}> GraphRAG</label><br>
-              <label><input type="radio" name="mode" value="/mode4" {% if current_mode == "mode4" %}checked{% endif %}> No RAG vs BaseRAG</label><br>
-              <label><input type="radio" name="mode" value="/mode5" {% if current_mode == "mode5" %}checked{% endif %}> BaseRAG vs GraphRAG</label><br>
-              <button type="submit" class="btn-primary" style="margin-top: 10px; width: 100%;">Go</button>
-    
+            <label><input type="radio" name="mode" value="/mode1" {% if current_mode == "mode1" %}checked{% endif %}> LLM Alone</label><br>
+            <label><input type="radio" name="mode" value="/mode2" {% if current_mode == "mode2" %}checked{% endif %}> RAG</label><br>
+            <label><input type="radio" name="mode" value="/mode3" {% if current_mode == "mode3" %}checked{% endif %}> GraphRAG</label><br>
+            <label><input type="radio" name="mode" value="/mode4" {% if current_mode == "mode4" %}checked{% endif %}> LLM Alone vs RAG</label><br>
+            <label><input type="radio" name="mode" value="/mode5" {% if current_mode == "mode5" %}checked{% endif %}> RAG vs GraphRAG</label><br>
+            <button type="submit" class="btn-primary" style="margin-top: 10px; width: 100%;">Go</button>
             
           </form>
         </div>
@@ -442,9 +441,6 @@
       
     </div>
 
-    <div class="alert">
-      ⚠️ Experimental prototype — some queries may take up to a minute to process.
-    </div>
 
     <form method="POST">
 
@@ -535,272 +531,490 @@
 
 
   
-  <script>
+</script>
+  
+  
 
-    const icon = document.getElementById("settings-icon");
-    const dropdown = document.getElementById("settings-dropdown");
+<script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
+<!-- <script src="https://unpkg.com/3d-force-graph/dist/3d-force-graph.min.js"></script> -->
+<script src="https://unpkg.com/3d-force-graph@1.74.0/dist/3d-force-graph.min.js?force=true"></script>
 
-    icon.addEventListener("click", (e) => {
+
+
+ 
+<script>
+  const icon = document.getElementById("settings-icon");
+  const dropdown = document.getElementById("settings-dropdown");
+  
+  icon.addEventListener("click", (e) => {
     e.stopPropagation();
     dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-    });
-
-    document.addEventListener("click", (e) => {
+  });
+  
+  document.addEventListener("click", (e) => {
     if (!dropdown.contains(e.target) && e.target !== icon) {
-        dropdown.style.display = "none";
+      dropdown.style.display = "none";
     }
-    });
-
-    document.getElementById("settings-form").addEventListener("submit", function (e) {
+  });
+  
+  document.getElementById("settings-form").addEventListener("submit", function (e) {
     e.preventDefault();
     const selected = document.querySelector('input[name="mode"]:checked').value;
     window.location.href = selected;
-    });
+  });
+  
+  // document.addEventListener("DOMContentLoaded", () => {
+  //   const input = document.getElementById("search-input");
+  //   const clearBtn = document.getElementById("clear-button");
+  
+  //   function toggleClearButton() {
+  //     clearBtn.style.display = input.value ? "block" : "none";
+  //   }
+  
+  //   input.addEventListener("input", toggleClearButton);
+  //   clearBtn.addEventListener("click", () => {
+  //     input.value = "";
+  //     clearBtn.style.display = "none";
+  //     input.focus();
+  //   });
+  
+  //   toggleClearButton();
+  // });
 
+  document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("search-input");
+    const clearBtn = document.getElementById("clear-button");
+    const visualizeBtn = document.getElementById("visualize-query");
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const input = document.getElementById("search-input");
-      const clearBtn = document.getElementById("clear-button");
-      const visualizeBtn = document.getElementById("visualize-query");
-
-      function toggleClearButton() {
-        clearBtn.style.display = input.value ? "block" : "none";
-        visualizeBtn.disabled = !input.value.trim();  // disable if input is empty
-      }
-
-      input.addEventListener("input", toggleClearButton);
-      clearBtn.addEventListener("click", () => {
-        input.value = "";
-        clearBtn.style.display = "none";
-        visualizeBtn.disabled = true;  // re-disable
-        input.focus();
-      });
-
-      toggleClearButton(); // run once on load
-    });
-    let Graph3D = null;
-    
-
-    
-    function destroyGraph() {
-      if (Graph3D && Graph3D._destructor) {
-        Graph3D._destructor();
-      }
-      highlightNodes.clear();
-      highlightLinks.clear();
-      hoverNode = null;
-      Graph3D = null;
+    function toggleClearButton() {
+      clearBtn.style.display = input.value ? "block" : "none";
+      visualizeBtn.disabled = !input.value.trim();  // disable if input is empty
     }
 
-    document.getElementById("open-graph").addEventListener("click", function () {
-      const modal = document.getElementById("graph-modal");
-      modal.style.display = "block";
-    
-      // Delay to ensure modal is visible
-      setTimeout(() => {
-        if (!Graph3D) {
-            const container = document.getElementById("modal-graph");
+    input.addEventListener("input", toggleClearButton);
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      clearBtn.style.display = "none";
+      visualizeBtn.disabled = true;  // re-disable
+      input.focus();
+    });
 
-            Graph3D = ForceGraph3D()(container)
-               
-            .backgroundColor("#000000")
+    toggleClearButton(); // run once on load
+  });
 
-            // .backgroundColor("#000000")
-            .nodeAutoColorBy("type")
-            // .nodeVal(node => {
-            //     if (node.type === "Paper") return 100;
-            //     if (node.type === "Topic") return 50;
-            //     return 20;
-            // })
-            // .nodeThreeObject(node => {
-            //     const geometry = new THREE.SphereGeometry(
-            //         node.type === "Paper" ? 20 :
-            //         node.type === "Topic" ? 12 : 8
-            //     );
-            //     const baseColor =
-            //         node.type === "Paper" ? 0x3a4e7a :   // Soft Midnight Blue
-            //         node.type === "Topic" ? 0x5c7d87 :   // Dusty Sky Teal
-            //         0x8c8fae;                            // Silver Lavender
+  
+  let Graph3D = null;
+  let highlightNodes = new Set();
+  let highlightLinks = new Set();
+  let hoverNode = null;
 
 
 
-            //     const material = new THREE.MeshPhongMaterial({
-            //         color: baseColor,
-            //         emissive: baseColor,
-            //         emissiveIntensity: 0.3,
-            //         shininess: 40,
-            //         transparent: true,
-            //         opacity: 0.9
-            //         });
+//     function updateHighlight() {
+//   Graph3D.graphData().nodes.forEach(node => {
+//     const mesh = node.__mesh || node.__threeObj;
+//     if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
+
+//     const isHighlighted = highlightNodes.has(node);
+//     const colorToApply = isHighlighted ? node.__highlightColor : node.__baseColor;
+
+//     mesh.material.color.copy(colorToApply);
+//     mesh.material.emissive.copy(colorToApply);
+//     mesh.material.needsUpdate = true;
+//   });
+
+//   Graph3D
+//     .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#555555')
+//     .linkWidth(link => highlightLinks.has(link) ? 3 : 1.5)
+//     .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
+//     .linkDirectionalParticleWidth(2);
+// }
 
 
+function updateHighlight() {
+Graph3D.graphData().nodes.forEach(node => {
+  const mesh = node.__mesh || node.__threeObj;
+  if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
 
-            //     return new THREE.Mesh(geometry, material);
-            //     })
+  const isHighlighted = highlightNodes.has(node);
+  const colorToApply = isHighlighted ? node.__highlightColor : node.__baseColor;
 
-            .nodeThreeObject(node => {
-                const geometry = new THREE.SphereGeometry(
-                    node.type === "Paper" ? 22 :
-                    node.type === "Topic" ? 18 : 12
-                );
- 
-                const color =
-                    // node.type === "Paper" ? 0x6c75c9 :
-                    node.type === "Paper" ? 0x00b2A9 :
-                    // node.type === "Topic" ? 0x5c7d87 :
-                    node.type === "Topic" ? 0x2F2895 :
-                    0xFFA489;
-                    // 0x8c8fae;
+  mesh.material.color.copy(colorToApply);
+  mesh.material.emissive.copy(colorToApply);
+  mesh.material.needsUpdate = true;
+});
 
-                const material = new THREE.MeshPhongMaterial({
-                    color,
-                    emissive: color,
-                    emissiveIntensity: 0.3,
-                    shininess: 40,
-                    transparent: true,
-                    opacity: 1
-                });
+Graph3D
+  .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#ffffff')
+  .linkWidth(link => highlightLinks.has(link) ? 3 : 1.5)
+  .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
+  .linkDirectionalParticleWidth(2);
+}
+// function updateHighlight() {
+//   const dimColor = new THREE.Color('#222222');  // (optional fallback)
 
-                return new THREE.Mesh(geometry, material);
-                })
+//   Graph3D.graphData().nodes.forEach(node => {
+//     const mesh = node.__mesh || node.__threeObj;
+//     if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
 
-            .nodeLabel(node => `${node.label} (${node.type})`)
-            .linkLabel(link => link.type)
-            .linkColor(() => "#ffffff")
-            .linkOpacity(0.3)
-            .linkWidth(1.5)
-            
-            const controls = Graph3D.controls();
-            controls.minDistance = 100;
-            controls.maxDistance = 10000; 
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = 1.0;
-            controls.enableDamping = true;   // 🧽 smooth effect
-            controls.dampingFactor = 0.05;
+//     if (highlightNodes.size === 0) {
+//       // Nothing is highlighted → show all normally
+//       mesh.visible = true;
+//       mesh.material.color.copy(node.__baseColor);
+//       mesh.material.emissive.copy(node.__baseColor);
+//       mesh.material.opacity = 0.9;
+//     } else if (highlightNodes.has(node)) {
+//       // Highlighted node or neighbor
+//       mesh.visible = true;
+//       mesh.material.color.copy(node.__highlightColor);
+//       mesh.material.emissive.copy(node.__highlightColor);
+//       mesh.material.opacity = 1.0;
+//     } else {
+//       // Not part of the highlight — hide it
+//       mesh.visible = false;
+//       return; // Skip label update
+//     }
 
-            controls.addEventListener('start', () => {
-            controls.autoRotate = false;
-            });
+//     mesh.material.transparent = true;
+//     mesh.material.needsUpdate = true;
 
-            Graph3D.cameraPosition({ x: 0, y: 0, z: 10000 }, null, 0); // set initial distance
-            const camera = Graph3D.camera();
-            camera.near = 1;
-            camera.far = 20000; 
-            camera.updateProjectionMatrix();
+//     // Show label only if highlighted
+//     if (node.__labelSprite) {
+//       node.__labelSprite.visible = highlightNodes.has(node);
+//     }
+//   });
+
+//   // Link styling
+//   if (hoverNode || highlightLinks.size > 0) {
+//     Graph3D
+//       .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#333333')
+//       .linkWidth(link => highlightLinks.has(link) ? 3 : 1.2)
+//       .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
+//       .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 2 : 0);
+//   } else {
+//     Graph3D
+//       .linkColor(() => '#ffffff')
+//       .linkWidth(() => 1.5)
+//       .linkDirectionalParticles(() => 0)
+//       .linkDirectionalParticleWidth(() => 0);
+//   }
+// }
+
+// function updateHighlight() {
+//   Graph3D.graphData().nodes.forEach(node => {
+//     const mesh = node.__mesh || node.__threeObj;
+//     if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
+
+//     const isHighlighted = highlightNodes.has(node);
+//     const isActive = highlightNodes.size === 0 || isHighlighted;
+
+//     // Make node visible and styled
+//     mesh.visible = true;
+
+//     const mat = mesh.material;
+
+//     if (isActive) {
+//       mat.color.copy(isHighlighted ? node.__highlightColor : node.__baseColor);
+//       mat.emissive.copy(isHighlighted ? node.__highlightColor : node.__baseColor);
+//       mat.opacity = isHighlighted ? 1.0 : 0.9;
+//       mat.depthWrite = true;
+//     } else {
+//       // Dimmed (non-highlighted) node: make invisible, non-blocking
+//       mat.opacity = 0.001;
+//       mat.color.set(0x000000);
+//       mat.emissive.set(0x000000);
+//       mat.depthWrite = false; // 👈 disables blocking of labels and links
+//     }
+
+//     mat.transparent = true;
+//     mat.needsUpdate = true;
+
+//     if (node.__labelSprite) {
+//       node.__labelSprite.visible = isHighlighted;
+//     }
+//   });
+
+//   // Link styling
+//   if (hoverNode || highlightLinks.size > 0) {
+//     Graph3D
+//       .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#333333')
+//       .linkWidth(link => highlightLinks.has(link) ? 3 : 1.2)
+//       .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
+//       .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 2 : 0);
+//   } else {
+//     Graph3D
+//       .linkColor(() => '#ffffff')
+//       .linkWidth(() => 1.5)
+//       .linkDirectionalParticles(() => 0)
+//       .linkDirectionalParticleWidth(() => 0);
+//   }
+// }
+
+  
+  function destroyGraph() {
+    if (Graph3D && Graph3D._destructor) {
+      Graph3D._destructor();
+    }
+    highlightNodes.clear();
+    highlightLinks.clear();
+    hoverNode = null;
+    Graph3D = null;
+  }
+  
+  document.getElementById("open-graph").addEventListener("click", function () {
+    const modal = document.getElementById("graph-modal");
+    modal.style.display = "block";
+  
+    setTimeout(() => {
+      if (!Graph3D) {
+        const container = document.getElementById("modal-graph");
+  
+        Graph3D = ForceGraph3D()(container)
+          .backgroundColor("#000000")
+          .nodeAutoColorBy("type")
+          .nodeLabel(node => `${node.label} (${node.type})`)
+          .linkLabel(link => link.type)
+          .linkColor(() => "#ffffff")
+          .linkOpacity(0.3)
+          .linkWidth(1.5)
+          .onNodeHover(node => {
+            if ((!node && !highlightNodes.size) || (node && hoverNode === node)) return;
+  
+            highlightNodes.clear();
+            highlightLinks.clear();
+            if (node) {
+              highlightNodes.add(node);
+              (node.neighbors || []).forEach(n => highlightNodes.add(n));
+              (node.links || []).forEach(l => highlightLinks.add(l));
+            }
+  
+            hoverNode = node || null;
+            updateHighlight();
+          })
+          .onLinkHover(link => {
+            highlightNodes.clear();
+            highlightLinks.clear();
+            if (link) {
+              highlightLinks.add(link);
+              highlightNodes.add(link.source);
+              highlightNodes.add(link.target);
+            }
+            updateHighlight();
+          });
+  
+        const controls = Graph3D.controls();
+        controls.minDistance = 100;
+        controls.maxDistance = 10000;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.addEventListener('start', () => {
+          controls.autoRotate = false;
+        });
+  
+        Graph3D.cameraPosition({ x: 0, y: 0, z: 3500 }, null, 0);
+        const camera = Graph3D.camera();
+        camera.near = 1;
+        camera.far = 20000;
+        camera.updateProjectionMatrix();
+  
         const scene = Graph3D.scene();
-        scene.fog = new THREE.Fog(0x000000, 3000, 15000);  // 🔧 increase range
+        scene.fog = new THREE.Fog(0x000000, 3000, 15000);
         scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-
         const pointLight = new THREE.PointLight(0xffffff, 1.5, 5000);
         pointLight.position.set(400, 400, 400);
         scene.add(pointLight);
-
-
-            // ✅ Spread nodes apart
-            Graph3D.d3Force("link").distance(200);
-            Graph3D.d3Force("charge").strength(-300);
-
-            // ✅ Load and display your graph
-            fetch("/api/graph")
-            .then(res => res.json())
-            .then(data => {
-                console.log("Graph data loaded:", data);
-                Graph3D.graphData(data);
-
-
-                Graph3D.nodeThreeObjectExtend(true);
-                
-                // 👇 Set up update loop on each frame
-                Graph3D.onRenderFramePost(() => {
-                const cam = Graph3D.camera();
-                Graph3D.graphData().nodes.forEach(node => {
-                    const mesh = node.__threeObj;
-                    if (!mesh) return;
-
-                    const dist = cam.position.distanceTo(mesh.position);
-
-                    // Clamp values
-                    const minScale = 6;
-                    const maxScale = 20;
-                    const scale = Math.max(minScale, Math.min(maxScale, 1000 / dist));
-
-                    // Apply scale and opacity
-                    mesh.scale.set(scale, scale, scale);
-
-                    if (mesh.material) {
-                    mesh.material.opacity = Math.max(0.3, Math.min(1, 800 / dist));
-                    mesh.material.transparent = true;
-                    }
-                });
-                });
+  
+        Graph3D.d3Force("link").distance(200);
+        Graph3D.d3Force("charge").strength(-300);
+  
+        fetch("/api/graph")
+          .then(res => res.json())
+          .then(data => {
+            console.log("Graph data loaded:", data);
+            
+            const nodeById = Object.fromEntries(data.nodes.map(n => [n.id, n]));
+            data.links.forEach(link => {
+              const a = nodeById[link.source];
+              const b = nodeById[link.target];
+  
+              if (!a.neighbors) a.neighbors = [];
+              if (!b.neighbors) b.neighbors = [];
+              if (!a.links) a.links = [];
+              if (!b.links) b.links = [];
+  
+              a.neighbors.push(b);
+              b.neighbors.push(a);
+              a.links.push(link);
+              b.links.push(link);
+  
+              link.source = a;
+              link.target = b;
             });
-        }
+  
+            Graph3D.nodeThreeObjectExtend(true);
+
+
+//               Graph3D.nodeThreeObject(node => {
+//   const geometry = new THREE.SphereGeometry(
+//     node.label === "Large Language Models" ? 100 :  // 🔍 make LLM specifically larger
+
+//     node.type === "Paper" ? 22 :
+//     node.type === "Topic" ? 18 : 12
+//   );
+
+//   const dimHex =
+//     node.type === "Paper" ? "#227c88" :
+//     node.type === "Topic" ? "#3d4e78" :
+//     "#a36a5f";
+
+//   const highlightHex =
+//     node.type === "Paper" ? "#00ffff" :
+//     node.type === "Topic" ? "#925aff" :
+//     "#ff8866";
+
+//   node.__baseColor = new THREE.Color(dimHex);
+//   node.__highlightColor = new THREE.Color(highlightHex);
+
+//   const material = new THREE.MeshPhongMaterial({
+//     color: node.__baseColor.clone(),
+//     emissive: node.__baseColor.clone(),
+//     emissiveIntensity: 0.25,
+//     shininess: 30,
+//     transparent: true,
+//     opacity: 0.9
+//   });
+
+//   const mesh = new THREE.Mesh(geometry, material);
+//   node.__mesh = mesh;
+//   return mesh;
+// });
 
 
 
-        }, 200);
-    });
-    
-    // Close modal by button
-    document.querySelector(".close-btn").addEventListener("click", function () {
-      document.getElementById("graph-modal").style.display = "none";
-      destroyGraph(); // 👈 destroys the graph instance
-      document.getElementById("modal-graph").innerHTML = ""; 
-    });
-    
-    // Close modal by clicking outside
-    window.addEventListener("click", function (event) {
-      const modal = document.getElementById("graph-modal");
-      if (event.target === modal) {
-        modal.style.display = "none";
+Graph3D.nodeThreeObject(node => {
+const geometry = new THREE.SphereGeometry(
+  node.label === "Large Language Models" ? 100 :
+  node.type === "Paper" ? 22 :
+  node.type === "Topic" ? 18 : 12
+);
+
+const dimHex =
+  node.type === "Paper" ? "#227c88" :
+  node.type === "Topic" ? "#3d4e78" :
+  "#a36a5f";
+
+const highlightHex =
+  node.type === "Paper" ? "#00ffff" :
+  node.type === "Topic" ? "#925aff" :
+  "#ff8866";
+
+node.__baseColor = new THREE.Color(dimHex);
+node.__highlightColor = new THREE.Color(highlightHex);
+
+const material = new THREE.MeshPhongMaterial({
+  color: node.__baseColor.clone(),
+  emissive: node.__baseColor.clone(),
+  emissiveIntensity: 0.25,
+  shininess: 30,
+  transparent: true,
+  opacity: 0.9
+});
+
+const mesh = new THREE.Mesh(geometry, material);
+node.__mesh = mesh;
+
+return mesh;
+
+});
+
+
+function createTextSprite(text) {
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+context.font = 'bold 40px Sans-Serif';
+context.fillStyle = 'white';
+context.textAlign = 'center';
+context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+const texture = new THREE.CanvasTexture(canvas);
+const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+const sprite = new THREE.Sprite(spriteMaterial);
+sprite.scale.set(80, 40, 1);
+return sprite;
+}
+
+
+
+            Graph3D.graphData(data);
+  
+            Graph3D.onRenderFramePost(() => {
+              const cam = Graph3D.camera();
+              Graph3D.graphData().nodes.forEach(node => {
+                const mesh = node.__threeObj;
+                if (!mesh) return;
+                const dist = cam.position.distanceTo(mesh.position);
+                const scale = Math.max(6, Math.min(40, 1600 / dist));
+                mesh.scale.set(scale, scale, scale);
+                if (mesh.material) {
+                  mesh.material.opacity = Math.max(0.3, Math.min(1, 800 / dist));
+                  mesh.material.transparent = true;
+                }
+              });
+            });
+          });
       }
-    });
-
-
-
-  document.getElementById("visualize-query").addEventListener("click", function () {
-  const query = document.querySelector("input[name='question']").value;
-
-  console.log("🚀 Sending query to backend:", query);
-
-  fetch("/api/store_graph_docs", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ query })
-  }).then(res => {
-    if (res.ok) {
-      // Show the same modal
-      document.getElementById("graph-modal").style.display = "block";
-      destroyGraph(); 
-
-      // Remove the existing graph if any
-      const container = document.getElementById("modal-graph");
-      container.innerHTML = "";
-
-      // Draw the filtered graph
-      const Graph3D = ForceGraph3D()(container)
-        .backgroundColor("#000000")
-        .nodeAutoColorBy("type")
-        .nodeLabel(node => `${node.label} (${node.type})`)
-        .linkLabel(link => link.type)
-        .linkColor(() => "#ffffff")
-        .linkOpacity(0.3)
-        .linkWidth(1.5);
-
-      fetch("/api/query-graph")  // <-- NEW filtered endpoint
-        .then(res => res.json())
-        // .then(data => Graph3D.graphData(data));
-        .then(data => {
-          console.log("📦 Fetched graph data:", data); // 👈 this line is the debug print
-          Graph3D.graphData(data);
-        });
+    }, 200);
+  });
+  
+  document.querySelector(".close-btn").addEventListener("click", function () {
+    document.getElementById("graph-modal").style.display = "none";
+    destroyGraph(); //  destroys the graph instance
+    document.getElementById("modal-graph").innerHTML = "";
+  });
+  
+  window.addEventListener("click", function (event) {
+    const modal = document.getElementById("graph-modal");
+    if (event.target === modal) {
+      modal.style.display = "none";
     }
   });
-});
-    
-    </script>
-    
+  
+  document.getElementById("visualize-query").addEventListener("click", function () {
+    const query = document.querySelector("input[name='question']").value;
+    console.log("🚀 Sending query to backend:", query);
+  
+    fetch("/api/store_graph_docs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    }).then(res => {
+      if (res.ok) {
+        document.getElementById("graph-modal").style.display = "block";
+        destroyGraph();
+        const container = document.getElementById("modal-graph");
+        container.innerHTML = "";
+  
+        Graph3D = ForceGraph3D()(container)
+          .backgroundColor("#000000")
+          .nodeAutoColorBy("type")
+          .nodeLabel(node => `${node.label} (${node.type})`)
+          .linkLabel(link => link.type)
+          .linkColor(() => "#ffffff")
+          .linkOpacity(0.3)
+          .linkWidth(1.5);
+  
+        fetch("/api/query-graph")
+          .then(res => res.json())
+          .then(data => {
+            console.log("📦 Fetched graph data:", data);
+            Graph3D.graphData(data);
+          });
+      }
+    });
+  });
+  </script>
+  
 </body>
 </html>
