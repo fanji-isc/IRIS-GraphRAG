@@ -454,7 +454,7 @@
     <div class="answers-container">
       {% if answer1 %}
       <div class="answer-box">
-        <h3>No RAG Response</h3>
+        <h3>LLM Alone Response</h3>
         {% if answer1 is iterable and answer1 is not string %}
         <ul>
           {% for item in answer1 %}
@@ -469,7 +469,7 @@
 
       {% if answer2 %}
       <div class="answer-box">
-        <h3>BaseRAG Response</h3>
+        <h3>RAG Response</h3>
         {% if answer2 is iterable and answer2 is not string %}
         <ul>
           {% for item in answer2 %}

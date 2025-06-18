@@ -52,7 +52,7 @@ def home():
     if request.method == "POST":
         question = request.form.get("question")
         answer = ask_query_no_rag(question)
-    return render_template("mode1.html", question=question, answer=answer)
+    return render_template("mode1.html", question=question, answer=answer,current_mode="mode1")
 
 @app.route("/api/graph")
 def get_graph():
@@ -151,7 +151,7 @@ def mode2():
     answer = None
     if request.method == "POST":
         question = request.form.get("question")
-        answer = ask_query_rag(question, graphitems=0, vectoritems=100)
+        answer = ask_query_rag(question, graphitems=0, vectoritems=50)
     return render_template("mode2.html", question=question, answer=answer, current_mode="mode2")
 
 @app.route("/mode3", methods=["GET", "POST"])
@@ -160,7 +160,7 @@ def mode3():
     answer = None
     if request.method == "POST":
         question = request.form.get("question")
-        answer = ask_query_graphrag(question, graphitems=100, vectoritems=0)
+        answer = ask_query_graphrag(question, graphitems=50, vectoritems=0)
     return render_template("mode3.html", question=question, answer=answer, current_mode="mode3")
 
 

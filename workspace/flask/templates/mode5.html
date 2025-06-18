@@ -465,7 +465,7 @@
     <div class="answers-container">
       {% if answer1 %}
       <div class="answer-box">
-        <h3>BaseRAG Response</h3>
+        <h3>RAG Response</h3>
         {% if answer1 is iterable and answer1 is not string %}
         <ul>
           {% for item in answer1 %}
@@ -582,439 +582,253 @@
   // });
 
   document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("search-input");
-    const clearBtn = document.getElementById("clear-button");
-    const visualizeBtn = document.getElementById("visualize-query");
+  const input = document.getElementById("search-input");
+  const clearBtn = document.getElementById("clear-button");
+  const visualizeBtn = document.getElementById("visualize-query");
 
-    function toggleClearButton() {
-      clearBtn.style.display = input.value ? "block" : "none";
-      visualizeBtn.disabled = !input.value.trim();  // disable if input is empty
-    }
+  function toggleClearButton() {
+    clearBtn.style.display = input.value ? "block" : "none";
+    visualizeBtn.disabled = !input.value.trim();  // disable if input is empty
+  }
 
-    input.addEventListener("input", toggleClearButton);
-    clearBtn.addEventListener("click", () => {
-      input.value = "";
-      clearBtn.style.display = "none";
-      visualizeBtn.disabled = true;  // re-disable
-      input.focus();
-    });
-
-    toggleClearButton(); // run once on load
+  input.addEventListener("input", toggleClearButton);
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    clearBtn.style.display = "none";
+    visualizeBtn.disabled = true;  // re-disable
+    input.focus();
   });
 
-  
-  let Graph3D = null;
-  let highlightNodes = new Set();
-  let highlightLinks = new Set();
-  let hoverNode = null;
+  toggleClearButton(); // run once on load
+});
 
-
-
-//     function updateHighlight() {
-//   Graph3D.graphData().nodes.forEach(node => {
-//     const mesh = node.__mesh || node.__threeObj;
-//     if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
-
-//     const isHighlighted = highlightNodes.has(node);
-//     const colorToApply = isHighlighted ? node.__highlightColor : node.__baseColor;
-
-//     mesh.material.color.copy(colorToApply);
-//     mesh.material.emissive.copy(colorToApply);
-//     mesh.material.needsUpdate = true;
-//   });
-
-//   Graph3D
-//     .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#555555')
-//     .linkWidth(link => highlightLinks.has(link) ? 3 : 1.5)
-//     .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
-//     .linkDirectionalParticleWidth(2);
-// }
-
+let Graph3D = null;
+let highlightNodes = new Set();
+let highlightLinks = new Set();
+let hoverNode = null;
 
 function updateHighlight() {
-Graph3D.graphData().nodes.forEach(node => {
-  const mesh = node.__mesh || node.__threeObj;
-  if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
+  Graph3D.graphData().nodes.forEach(node => {
+    const mesh = node.__mesh || node.__threeObj;
+    if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
 
-  const isHighlighted = highlightNodes.has(node);
-  const colorToApply = isHighlighted ? node.__highlightColor : node.__baseColor;
+    const isHighlighted = highlightNodes.has(node);
+    const colorToApply = isHighlighted ? node.__highlightColor : node.__baseColor;
 
-  mesh.material.color.copy(colorToApply);
-  mesh.material.emissive.copy(colorToApply);
-  mesh.material.needsUpdate = true;
-});
+    mesh.material.color.copy(colorToApply);
+    mesh.material.emissive.copy(colorToApply);
+    mesh.material.needsUpdate = true;
+  });
 
-Graph3D
-  .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#ffffff')
-  .linkWidth(link => highlightLinks.has(link) ? 3 : 1.5)
-  .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
-  .linkDirectionalParticleWidth(2);
+  Graph3D
+    .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#ffffff')
+    .linkWidth(link => highlightLinks.has(link) ? 3 : 1.5)
+    .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
+    .linkDirectionalParticleWidth(2);
 }
-// function updateHighlight() {
-//   const dimColor = new THREE.Color('#222222');  // (optional fallback)
 
-//   Graph3D.graphData().nodes.forEach(node => {
-//     const mesh = node.__mesh || node.__threeObj;
-//     if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
-
-//     if (highlightNodes.size === 0) {
-//       // Nothing is highlighted → show all normally
-//       mesh.visible = true;
-//       mesh.material.color.copy(node.__baseColor);
-//       mesh.material.emissive.copy(node.__baseColor);
-//       mesh.material.opacity = 0.9;
-//     } else if (highlightNodes.has(node)) {
-//       // Highlighted node or neighbor
-//       mesh.visible = true;
-//       mesh.material.color.copy(node.__highlightColor);
-//       mesh.material.emissive.copy(node.__highlightColor);
-//       mesh.material.opacity = 1.0;
-//     } else {
-//       // Not part of the highlight — hide it
-//       mesh.visible = false;
-//       return; // Skip label update
-//     }
-
-//     mesh.material.transparent = true;
-//     mesh.material.needsUpdate = true;
-
-//     // Show label only if highlighted
-//     if (node.__labelSprite) {
-//       node.__labelSprite.visible = highlightNodes.has(node);
-//     }
-//   });
-
-//   // Link styling
-//   if (hoverNode || highlightLinks.size > 0) {
-//     Graph3D
-//       .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#333333')
-//       .linkWidth(link => highlightLinks.has(link) ? 3 : 1.2)
-//       .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
-//       .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 2 : 0);
-//   } else {
-//     Graph3D
-//       .linkColor(() => '#ffffff')
-//       .linkWidth(() => 1.5)
-//       .linkDirectionalParticles(() => 0)
-//       .linkDirectionalParticleWidth(() => 0);
-//   }
-// }
-
-// function updateHighlight() {
-//   Graph3D.graphData().nodes.forEach(node => {
-//     const mesh = node.__mesh || node.__threeObj;
-//     if (!mesh || !mesh.material || !node.__baseColor || !node.__highlightColor) return;
-
-//     const isHighlighted = highlightNodes.has(node);
-//     const isActive = highlightNodes.size === 0 || isHighlighted;
-
-//     // Make node visible and styled
-//     mesh.visible = true;
-
-//     const mat = mesh.material;
-
-//     if (isActive) {
-//       mat.color.copy(isHighlighted ? node.__highlightColor : node.__baseColor);
-//       mat.emissive.copy(isHighlighted ? node.__highlightColor : node.__baseColor);
-//       mat.opacity = isHighlighted ? 1.0 : 0.9;
-//       mat.depthWrite = true;
-//     } else {
-//       // Dimmed (non-highlighted) node: make invisible, non-blocking
-//       mat.opacity = 0.001;
-//       mat.color.set(0x000000);
-//       mat.emissive.set(0x000000);
-//       mat.depthWrite = false; // 👈 disables blocking of labels and links
-//     }
-
-//     mat.transparent = true;
-//     mat.needsUpdate = true;
-
-//     if (node.__labelSprite) {
-//       node.__labelSprite.visible = isHighlighted;
-//     }
-//   });
-
-//   // Link styling
-//   if (hoverNode || highlightLinks.size > 0) {
-//     Graph3D
-//       .linkColor(link => highlightLinks.has(link) ? '#dddddd' : '#333333')
-//       .linkWidth(link => highlightLinks.has(link) ? 3 : 1.2)
-//       .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
-//       .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 2 : 0);
-//   } else {
-//     Graph3D
-//       .linkColor(() => '#ffffff')
-//       .linkWidth(() => 1.5)
-//       .linkDirectionalParticles(() => 0)
-//       .linkDirectionalParticleWidth(() => 0);
-//   }
-// }
-
-  
-  function destroyGraph() {
-    if (Graph3D && Graph3D._destructor) {
-      Graph3D._destructor();
-    }
-    highlightNodes.clear();
-    highlightLinks.clear();
-    hoverNode = null;
-    Graph3D = null;
+function destroyGraph() {
+  if (Graph3D && Graph3D._destructor) {
+    Graph3D._destructor();
   }
-  
-  document.getElementById("open-graph").addEventListener("click", function () {
-    const modal = document.getElementById("graph-modal");
-    modal.style.display = "block";
-  
-    setTimeout(() => {
-      if (!Graph3D) {
-        const container = document.getElementById("modal-graph");
-  
-        Graph3D = ForceGraph3D()(container)
-          .backgroundColor("#000000")
-          .nodeAutoColorBy("type")
-          .nodeLabel(node => `${node.label} (${node.type})`)
-          .linkLabel(link => link.type)
-          .linkColor(() => "#ffffff")
-          .linkOpacity(0.3)
-          .linkWidth(1.5)
-          .onNodeHover(node => {
-            if ((!node && !highlightNodes.size) || (node && hoverNode === node)) return;
-  
-            highlightNodes.clear();
-            highlightLinks.clear();
-            if (node) {
-              highlightNodes.add(node);
-              (node.neighbors || []).forEach(n => highlightNodes.add(n));
-              (node.links || []).forEach(l => highlightLinks.add(l));
-            }
-  
-            hoverNode = node || null;
-            updateHighlight();
-          })
-          .onLinkHover(link => {
-            highlightNodes.clear();
-            highlightLinks.clear();
-            if (link) {
-              highlightLinks.add(link);
-              highlightNodes.add(link.source);
-              highlightNodes.add(link.target);
-            }
-            updateHighlight();
-          });
-  
-        const controls = Graph3D.controls();
-        controls.minDistance = 100;
-        controls.maxDistance = 10000;
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 1.0;
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.addEventListener('start', () => {
-          controls.autoRotate = false;
-        });
-  
-        Graph3D.cameraPosition({ x: 0, y: 0, z: 3500 }, null, 0);
-        const camera = Graph3D.camera();
-        camera.near = 1;
-        camera.far = 20000;
-        camera.updateProjectionMatrix();
-  
-        const scene = Graph3D.scene();
-        scene.fog = new THREE.Fog(0x000000, 3000, 15000);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-        const pointLight = new THREE.PointLight(0xffffff, 1.5, 5000);
-        pointLight.position.set(400, 400, 400);
-        scene.add(pointLight);
-  
-        Graph3D.d3Force("link").distance(200);
-        Graph3D.d3Force("charge").strength(-300);
-  
-        fetch("/api/graph")
-          .then(res => res.json())
-          .then(data => {
-            console.log("Graph data loaded:", data);
-            
-            const nodeById = Object.fromEntries(data.nodes.map(n => [n.id, n]));
-            data.links.forEach(link => {
-              const a = nodeById[link.source];
-              const b = nodeById[link.target];
-  
-              if (!a.neighbors) a.neighbors = [];
-              if (!b.neighbors) b.neighbors = [];
-              if (!a.links) a.links = [];
-              if (!b.links) b.links = [];
-  
-              a.neighbors.push(b);
-              b.neighbors.push(a);
-              a.links.push(link);
-              b.links.push(link);
-  
-              link.source = a;
-              link.target = b;
-            });
-  
-            Graph3D.nodeThreeObjectExtend(true);
-
-
-//               Graph3D.nodeThreeObject(node => {
-//   const geometry = new THREE.SphereGeometry(
-//     node.label === "Large Language Models" ? 100 :  // 🔍 make LLM specifically larger
-
-//     node.type === "Paper" ? 22 :
-//     node.type === "Topic" ? 18 : 12
-//   );
-
-//   const dimHex =
-//     node.type === "Paper" ? "#227c88" :
-//     node.type === "Topic" ? "#3d4e78" :
-//     "#a36a5f";
-
-//   const highlightHex =
-//     node.type === "Paper" ? "#00ffff" :
-//     node.type === "Topic" ? "#925aff" :
-//     "#ff8866";
-
-//   node.__baseColor = new THREE.Color(dimHex);
-//   node.__highlightColor = new THREE.Color(highlightHex);
-
-//   const material = new THREE.MeshPhongMaterial({
-//     color: node.__baseColor.clone(),
-//     emissive: node.__baseColor.clone(),
-//     emissiveIntensity: 0.25,
-//     shininess: 30,
-//     transparent: true,
-//     opacity: 0.9
-//   });
-
-//   const mesh = new THREE.Mesh(geometry, material);
-//   node.__mesh = mesh;
-//   return mesh;
-// });
-
-
-
-Graph3D.nodeThreeObject(node => {
-const geometry = new THREE.SphereGeometry(
-  node.label === "Large Language Models" ? 100 :
-  node.type === "Paper" ? 22 :
-  node.type === "Topic" ? 18 : 12
-);
-
-const dimHex =
-  node.type === "Paper" ? "#227c88" :
-  node.type === "Topic" ? "#3d4e78" :
-  "#a36a5f";
-
-const highlightHex =
-  node.type === "Paper" ? "#00ffff" :
-  node.type === "Topic" ? "#925aff" :
-  "#ff8866";
-
-node.__baseColor = new THREE.Color(dimHex);
-node.__highlightColor = new THREE.Color(highlightHex);
-
-const material = new THREE.MeshPhongMaterial({
-  color: node.__baseColor.clone(),
-  emissive: node.__baseColor.clone(),
-  emissiveIntensity: 0.25,
-  shininess: 30,
-  transparent: true,
-  opacity: 0.9
-});
-
-const mesh = new THREE.Mesh(geometry, material);
-node.__mesh = mesh;
-
-return mesh;
-
-});
-
-
-function createTextSprite(text) {
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-context.font = 'bold 40px Sans-Serif';
-context.fillStyle = 'white';
-context.textAlign = 'center';
-context.fillText(text, canvas.width / 2, canvas.height / 2);
-
-const texture = new THREE.CanvasTexture(canvas);
-const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-const sprite = new THREE.Sprite(spriteMaterial);
-sprite.scale.set(80, 40, 1);
-return sprite;
+  highlightNodes.clear();
+  highlightLinks.clear();
+  hoverNode = null;
+  Graph3D = null;
 }
 
+function initGraph(container, data) {
+  Graph3D = ForceGraph3D()(container)
+    .backgroundColor("#000000")
+    .nodeAutoColorBy("type")
+    .nodeLabel(node => `${node.label} (${node.type})`)
+    .linkLabel(link => link.type)
+    .linkColor(() => "#ffffff")
+    .linkOpacity(0.3)
+    .linkWidth(1.5)
+    .onNodeHover(node => {
+      if ((!node && !highlightNodes.size) || (node && hoverNode === node)) return;
 
-
-            Graph3D.graphData(data);
-  
-            Graph3D.onRenderFramePost(() => {
-              const cam = Graph3D.camera();
-              Graph3D.graphData().nodes.forEach(node => {
-                const mesh = node.__threeObj;
-                if (!mesh) return;
-                const dist = cam.position.distanceTo(mesh.position);
-                const scale = Math.max(6, Math.min(40, 1600 / dist));
-                mesh.scale.set(scale, scale, scale);
-                if (mesh.material) {
-                  mesh.material.opacity = Math.max(0.3, Math.min(1, 800 / dist));
-                  mesh.material.transparent = true;
-                }
-              });
-            });
-          });
+      highlightNodes.clear();
+      highlightLinks.clear();
+      if (node) {
+        highlightNodes.add(node);
+        (node.neighbors || []).forEach(n => highlightNodes.add(n));
+        (node.links || []).forEach(l => highlightLinks.add(l));
       }
-    }, 200);
+
+      hoverNode = node || null;
+      updateHighlight();
+    })
+    .onLinkHover(link => {
+      highlightNodes.clear();
+      highlightLinks.clear();
+      if (link) {
+        highlightLinks.add(link);
+        highlightNodes.add(link.source);
+        highlightNodes.add(link.target);
+      }
+      updateHighlight();
+    });
+
+  const controls = Graph3D.controls();
+  controls.minDistance = 100;
+  controls.maxDistance = 10000;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 1.0;
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.addEventListener('start', () => {
+    controls.autoRotate = false;
   });
-  
-  document.querySelector(".close-btn").addEventListener("click", function () {
-    document.getElementById("graph-modal").style.display = "none";
-    destroyGraph(); //  destroys the graph instance
-    document.getElementById("modal-graph").innerHTML = "";
+
+  Graph3D.cameraPosition({ x: 0, y: 0, z: 3500 }, null, 0);
+  const camera = Graph3D.camera();
+  camera.near = 1;
+  camera.far = 20000;
+  camera.updateProjectionMatrix();
+
+  const scene = Graph3D.scene();
+  scene.fog = new THREE.Fog(0x000000, 3000, 15000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+  const pointLight = new THREE.PointLight(0xffffff, 1.5, 5000);
+  pointLight.position.set(400, 400, 400);
+  scene.add(pointLight);
+
+  Graph3D.d3Force("link").distance(200);
+  Graph3D.d3Force("charge").strength(-300);
+
+  const nodeById = Object.fromEntries(data.nodes.map(n => [n.id, n]));
+  data.links.forEach(link => {
+    const a = nodeById[link.source];
+    const b = nodeById[link.target];
+
+    if (!a.neighbors) a.neighbors = [];
+    if (!b.neighbors) b.neighbors = [];
+    if (!a.links) a.links = [];
+    if (!b.links) b.links = [];
+
+    a.neighbors.push(b);
+    b.neighbors.push(a);
+    a.links.push(link);
+    b.links.push(link);
+
+    link.source = a;
+    link.target = b;
   });
-  
-  window.addEventListener("click", function (event) {
-    const modal = document.getElementById("graph-modal");
-    if (event.target === modal) {
-      modal.style.display = "none";
-    }
+
+  Graph3D.nodeThreeObjectExtend(true);
+  Graph3D.nodeThreeObject(node => {
+    const geometry = new THREE.SphereGeometry(
+      node.label === "Large Language Models" ? 100 :
+      node.type === "Paper" ? 22 :
+      node.type === "Topic" ? 18 : 12
+    );
+
+    const dimHex =
+      node.type === "Paper" ? "#227c88" :
+      node.type === "Topic" ? "#3d4e78" :
+      "#a36a5f";
+
+    const highlightHex =
+      node.type === "Paper" ? "#00ffff" :
+      node.type === "Topic" ? "#925aff" :
+      "#ff8866";
+
+    node.__baseColor = new THREE.Color(dimHex);
+    node.__highlightColor = new THREE.Color(highlightHex);
+
+    const material = new THREE.MeshPhongMaterial({
+      color: node.__baseColor.clone(),
+      emissive: node.__baseColor.clone(),
+      emissiveIntensity: 0.25,
+      shininess: 30,
+      transparent: true,
+      opacity: 0.9
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+    node.__mesh = mesh;
+    return mesh;
   });
-  
-  document.getElementById("visualize-query").addEventListener("click", function () {
-    const query = document.querySelector("input[name='question']").value;
-    console.log("🚀 Sending query to backend:", query);
-  
-    fetch("/api/store_graph_docs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query })
-    }).then(res => {
-      if (res.ok) {
-        document.getElementById("graph-modal").style.display = "block";
-        destroyGraph();
-        const container = document.getElementById("modal-graph");
-        container.innerHTML = "";
-  
-        Graph3D = ForceGraph3D()(container)
-          .backgroundColor("#000000")
-          .nodeAutoColorBy("type")
-          .nodeLabel(node => `${node.label} (${node.type})`)
-          .linkLabel(link => link.type)
-          .linkColor(() => "#ffffff")
-          .linkOpacity(0.3)
-          .linkWidth(1.5);
-  
-        fetch("/api/query-graph")
-          .then(res => res.json())
-          .then(data => {
-            console.log("📦 Fetched graph data:", data);
-            Graph3D.graphData(data);
-          });
+
+  Graph3D.graphData(data);
+
+  Graph3D.onRenderFramePost(() => {
+    const cam = Graph3D.camera();
+    Graph3D.graphData().nodes.forEach(node => {
+      const mesh = node.__threeObj;
+      if (!mesh) return;
+      const dist = cam.position.distanceTo(mesh.position);
+      const scale = Math.max(6, Math.min(40, 1600 / dist));
+      mesh.scale.set(scale, scale, scale);
+      if (mesh.material) {
+        mesh.material.opacity = Math.max(0.3, Math.min(1, 800 / dist));
+        mesh.material.transparent = true;
       }
     });
   });
-  </script>
+}
+
+document.getElementById("open-graph").addEventListener("click", function () {
+  const modal = document.getElementById("graph-modal");
+  modal.style.display = "block";
+
+  setTimeout(() => {
+    if (!Graph3D) {
+      const container = document.getElementById("modal-graph");
+      fetch("/api/graph")
+        .then(res => res.json())
+        .then(data => {
+          destroyGraph();
+          container.innerHTML = "";
+          initGraph(container, data);
+        });
+    }
+  }, 200);
+});
+
+document.getElementById("visualize-query").addEventListener("click", function () {
+  const query = document.querySelector("input[name='question']").value;
+  console.log("🚀 Sending query to backend:", query);
+
+  fetch("/api/store_graph_docs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query })
+  }).then(res => {
+    if (res.ok) {
+      const modal = document.getElementById("graph-modal");
+      modal.style.display = "block";
+
+      const container = document.getElementById("modal-graph");
+      destroyGraph();
+      container.innerHTML = "";
+
+      fetch("/api/query-graph")
+        .then(res => res.json())
+        .then(data => {
+          initGraph(container, data);
+        });
+    }
+  });
+});
+
+document.querySelector(".close-btn").addEventListener("click", function () {
+  document.getElementById("graph-modal").style.display = "none";
+  destroyGraph();
+  document.getElementById("modal-graph").innerHTML = "";
+});
+
+window.addEventListener("click", function (event) {
+  const modal = document.getElementById("graph-modal");
+  if (event.target === modal) {
+    modal.style.display = "none";
+    destroyGraph();
+    document.getElementById("modal-graph").innerHTML = "";
+  }
+});
+</script>
   
 </body>
 </html>

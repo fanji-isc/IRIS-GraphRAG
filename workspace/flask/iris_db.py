@@ -90,6 +90,10 @@ gpt4omini = "gpt-4o-mini"
 
 model = gpt4omini
 
+
+# model = "gpt-4-1106-preview"
+# model = "gpt-4o"
+
 # docsfile = '/app/CSV/papers100.csv'
 # relationsfile = '/app/CSV/relations100.csv'
 # entitiesfile = '/app/CSV/entities100.csv'
@@ -169,7 +173,7 @@ def ask_query_no_rag(query, cutoff=True):
     return [line.strip() for line in response.choices[0].message.content.split("\n") if line.strip()]
 
 
-def ask_query_graphrag(query, graphitems=100,vectoritems=0, method='local'):
+def ask_query_graphrag(query, graphitems=50,vectoritems=0, method='local'):
 
     user_query_entity = get_embeddings(query)
     user_query_embeddings = get_embeddings(query)
@@ -180,7 +184,7 @@ def ask_query_graphrag(query, graphitems=100,vectoritems=0, method='local'):
     response = llm_answer_rag(docs, query,True)
     return response
 
-def ask_query_rag(query, graphitems=0,vectoritems=100, method='local'):
+def ask_query_rag(query, graphitems=0,vectoritems=50, method='local'):
 
     user_query_entity = get_embeddings(query)
     user_query_embeddings = get_embeddings(query)
@@ -279,7 +283,7 @@ def llm_answer_rag(batch, query, cutoff=True):
     Use the following pieces of retrieved context to answer the question.  
     """ + (("Use three sentences maximum and keep the answer concise.") if cutoff else " ") + """
     Question: {question}  
-    Graph Context: {context}
+    Retrieved Context: {context}
     Answer:
     """
 
@@ -318,7 +322,7 @@ def llm_answer_ragvsgraghrag(batch, query, cutoff=True):
     Say I don't know if you don't know.  
     """ + (("Use three sentences maximum and keep the answer concise.") if cutoff else " ") + """
     Question: {question}  
-    Graph Context: {context}
+    Retrieved Context: {context}
     Answer:
     """
 
@@ -343,7 +347,7 @@ def llm_answer_ragvsgraghrag(batch, query, cutoff=True):
     return answer_lines
 
     
-def ask_query_graphrag_with_docs(query, graphitems=100, vectoritems=0):
+def ask_query_graphrag_with_docs(query, graphitems=50, vectoritems=0):
     user_query_entity = get_embeddings(query)
     user_query_embeddings = get_embeddings(query)
 
